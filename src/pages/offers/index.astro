@@ -1,0 +1,21 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection } from "astro:content";
+
+const offers = (await getCollection("offers")).sort((a, b) => a.data.order - b.data.order);
+---
+<Base title="Offers">
+  <h1>What the game offers</h1>
+  <p style="color: var(--fg-dim)">
+    Twelve bets about what makes this game worth playing, ranked by how much validating them would change the plan.
+    Each links to the round that will test it.
+  </p>
+  <div class="grid">
+    {offers.map((offer) => (
+      <a class="card" href={`/offers/${offer.id}/`}>
+        <h3>{offer.data.title}</h3>
+        <div class="meta">Round {offer.data.round} · epics {offer.data.epics.join(", ")}</div>
+      </a>
+    ))}
+  </div>
+</Base>

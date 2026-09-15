@@ -1,0 +1,15 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getEntry, render } from "astro:content";
+
+const page = await getEntry("pages", "roadmap");
+const { Content } = page ? await render(page) : { Content: null };
+---
+<Base title="Roadmap">
+  <h1>Roadmap</h1>
+  <p style="color: var(--fg-dim)">
+    Three rounds, each opened by evidence rather than a date. No round has a ship date attached — Agora's build
+    throughput on this project is still being measured.
+  </p>
+  {Content && <Content />}
+</Base>

@@ -1,0 +1,27 @@
+---
+import Base from "../../layouts/Base.astro";
+import { getCollection, render } from "astro:content";
+
+export async function getStaticPaths() {
+  const offers = await getCollection("offers");
+  return offers.map((offer) => ({
+    params: { slug: offer.id },
+    props: { offer },
+  }));
+}
+
+const { offer } = Astro.props;
+const { Content } = await render(offer);
+---
+<Base title={offer.data.title}>
+  <p><a href="/offers/">&larr; all offers</a></p>
+  <h1>{offer.data.title}</h1>
+  <p style="color: var(--fg-dim)">Earliest round: {offer.data.round} · Epics: {offer.data.epics.join(", ")}</p>
+  <p><em>{offer.data.hypothesis}</em></p>
+  <div class="grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 1rem;">
+    <div class="card"><strong>{offer.data.distinctiveness}</strong><div class="meta">distinctiveness</div></div>
+    <div class="card"><strong>{offer.data.risk}</strong><div class="meta">risk</div></div>
+    <div class="card"><strong>{offer.data.cost}</strong><div class="meta">cost</div></div>
+  </div>
+  <Content />
+</Base>

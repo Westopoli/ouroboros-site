@@ -1,0 +1,20 @@
+---
+import Base from "../layouts/Base.astro";
+import { getEntry, render } from "astro:content";
+
+const home = await getEntry("pages", "home");
+const { Content } = home ? await render(home) : { Content: null };
+---
+<Base title="Home">
+  <h1>Ouroboros Manifold</h1>
+  <p style="color: var(--fg-dim)">
+    What this game is, in the bible's own words. Rounds below decide what gets built and tested next — nothing here is finished, and nothing here is a promise.
+  </p>
+  {Content && <Content />}
+  <h2>How rounds work</h2>
+  <p>
+    Playtest rounds (friends, then a Discord cohort, then Steam Playtest) decide build order, not a fixed roadmap.
+    Each round ships a small, honest slice and measures whether specific bets about the game paid off before the next
+    slice is built. See <a href="/roadmap/">the roadmap</a> for what each round tests.
+  </p>
+</Base>
