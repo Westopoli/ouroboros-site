@@ -1,6 +1,6 @@
 # DESIGN.md — Ouroboros Manifold site
 
-Look-and-feel brief for the *Ouroboros Manifold* site (`ouroboros-site.fly.dev`). This is a creative brief, not a rulebook: it gives you the game's identity, the raw material, and the current structure, and then asks you to **explore**. Nothing here is locked. Push it — polished, cinematic, aspirational directions are wanted. Where this brief and a better idea disagree, bring the better idea.
+Look-and-feel brief for the *Ouroboros Manifold* site (`ouroboros-site.fly.dev`). The site's structure, narrative progression, showcase sequence, and every factual claim about the game are fixed in `NARRATIVE.md` (same repo) — read it alongside this file; this brief covers look and feel only. This is a creative brief, not a rulebook: it gives you the game's identity, the raw material, and the current structure, and then asks you to **explore**. Nothing here is locked. Push it — polished, cinematic, aspirational directions are wanted. Where this brief and a better idea disagree, bring the better idea.
 
 ## The one hard rule
 
@@ -12,7 +12,7 @@ The public face of *Ouroboros Manifold*, a multiplayer, generational, strategic 
 
 Its job is to make someone *feel* what this game is and want in. Explore the full range — an intimate invitation, a bold marketing landing page, or anything between. **Mockups are the point.** Aspirational, mocked-up "screenshots" of the game, hero renders, in-context UI, imagined moments — all welcome and expected. This is exploration; there are no limits right now.
 
-Current pages: Home, Offers, an interactive layer demo, and a Roadmap. Treat these as the starting structure, not a boundary — propose new sections, heroes, or flows if they serve the game.
+Current pages: Home, Offers, an interactive layer demo, and a Roadmap. The page structure and the home page's narrative sequence are fixed in `NARRATIVE.md`; explore freely *within* that structure — heroes, section treatments, and flows are yours to invent.
 
 ## What the game is (the raw material)
 
@@ -56,7 +56,7 @@ The site currently uses a system sans. Worth exploring a **pairing**: a warm ser
 
 ## Structure & pages (current shape)
 
-Design these; reinvent or extend them freely.
+Design these. The routes and the home page's beat sequence are fixed by `NARRATIVE.md`; the visual treatment of each is open.
 
 1. **Home.** The first impression — say what the game is and make someone want it. A strong hero (the strategic galaxy, a commander's moment, the low-poly fleet — your call), a distillation of the fantasy, a taste of the distinctive offers, a pull toward the demo, and a clear call to action (join the playtest / follow along). Range from restrained to full marketing hero — show a couple of directions.
 2. **Offers.** The game's distinctive bets (pulled from `distinctiveness.md`) — a grid or gallery, each with a title, a hook, and room for a mocked-up image that sells that idea. A detail page per offer (`/offers/[slug]`) goes deeper: the pitch, imagined art, the systems behind it.
