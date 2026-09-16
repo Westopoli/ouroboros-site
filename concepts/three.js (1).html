@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<!-- STITCH_THREEJS_START:ANIMATION_8 class="fixed inset-0 w-full h-full bg-transparent" -->
+<div class="fixed inset-0 w-full h-full bg-transparent" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_8" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_8');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const width = container.clientWidth || window.innerWidth;
+const height = container.clientHeight || window.innerHeight;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xbdd4d6);
+scene.fog = new THREE.FogExp2(0xbdd4d6, 0.010);
+
+const camera = new THREE.PerspectiveCamera(38, width / height, 1, 1400);
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+renderer.setSize(width, height);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+container.appendChild(renderer.domElement);
+
+// Lighting
+const amb = new THREE.AmbientLight(0xfffaea, 0.95);
+scene.add(amb);
+const sun = new THREE.DirectionalLight(0xfff6dc, 1.25);
+sun.position.set(50, 110, 40);
+scene.add(sun);
+const skyLight = new THREE.DirectionalLight(0x7ea7b3, 0.5);
+skyLight.position.set(-50, 30, -60);
+scene.add(skyLight);
+
+// Palette - Rich stepped terrain tiers
+const colWater = new THREE.Color(0x356578);
+const colMarsh = new THREE.Color(0x567d64);
+const colLowGround = new THREE.Color(0x7ba368);
+const colTerrace = new THREE.Color(0xb58c54);
+const colCliff = new THREE.Color(0x8c5b4b);
+const colHighBastion = new THREE.Color(0x614844);
+const colSnowCap = new THREE.Color(0xe6eff2);
+
+const GRID = 52;
+const T_SIZE = 1.35;
+const GAP = 0.04;
+
+const boxGeo = new THREE.BoxGeometry(T_SIZE - GAP, 1, T_SIZE - GAP);
+const total = GRID * GRID;
+const instTerrain = new THREE.InstancedMesh(boxGeo, new THREE.MeshLambertMaterial({ flatShading: true }), total);
+scene.add(instTerrain);
+
+const dummy = new THREE.Object3D();
+const gridMeta = [];
+
+function getElevation(x, z) {
+  const nx = x - GRID / 2;
+  const nz = z - GRID / 2;
+
+  const passDist = Math.abs(nx + nz * 0.75);
+  const isPass = passDist < 3.2;
+
+  const mesaWestDist = Math.hypot(nx + 8, nz - 4);
+  const mesaEastDist = Math.hypot(nx - 8, nz + 4);
+  const outerDist = Math.hypot(nx, nz);
+
+  let h = 0.5;
+  let stage = 0;
+
+  if (isPass) {
+    h = 0.22;
+    stage = 1;
+  } else if (mesaWestDist < 7.5) {
+    const f = Math.max(0, 1 - mesaWestDist / 7.5);
+    h = 2.0 + Math.floor(f * 4) * 1.3;
+    stage = 3;
+  } else if (mesaEastDist < 8.0) {
+    const f = Math.max(0, 1 - mesaEastDist / 8.0);
+    h = 2.4 + Math.floor(f * 5) * 1.3;
+    stage = 3;
+  } else if (outerDist > 19) {
+    const rimStep = Math.sin(nx * 0.5) * Math.cos(nz * 0.5) * 2;
+    h = 2.8 + Math.max(0, rimStep) * 1.5;
+    stage = 2;
+  } else {
+    const roll = Math.floor(Math.sin(nx * 0.4) * Math.cos(nz * 0.4) * 2);
+    h = 0.7 + Math.max(0, roll) * 0.6;
+    stage = 2;
+  }
+
+  let c = colLowGround;
+  if (h <= 0.3) c = colWater;
+  else if (h <= 0.9) c = colLowGround;
+  else if (h <= 1.8) c = colMarsh;
+  else if (h <= 3.2) c = colTerrace;
+  else if (h <= 5.0) c = colCliff;
+  else if (h <= 7.0) c = colHighBastion;
+  else c = colSnowCap;
+
+  const delay = stage * 1.6 + (Math.abs(nx) + Math.abs(nz)) * 0.045;
+  return { h, c, delay };
+}
+
+let idx = 0;
+for (let ix = 0; ix < GRID; ix++) {
+  for (let iz = 0; iz < GRID; iz++) {
+    const e = getElevation(ix, iz);
+    const px = (ix - (GRID - 1) / 2) * T_SIZE;
+    const pz = (iz - (GRID - 1) / 2) * T_SIZE;
+
+    gridMeta.push({
+      px, pz,
+      targetH: e.h,
+      col: e.c,
+      delay: e.delay,
+      baseH: 0.35
+    });
+
+    instTerrain.setColorAt(idx, colLowGround);
+    dummy.position.set(px, 0.175, pz);
+    dummy.scale.set(1, 0.35, 1);
+    dummy.updateMatrix();
+    instTerrain.setMatrixAt(idx, dummy.matrix);
+    idx++;
+  }
+}
+instTerrain.instanceMatrix.needsUpdate = true;
+if (instTerrain.instanceColor) instTerrain.instanceColor.needsUpdate = true;
+
+const envGroup = new THREE.Group();
+scene.add(envGroup);
+
+const bgRockFar = new THREE.MeshLambertMaterial({ color: 0x93aab0, flatShading: true });
+const bgRockMid = new THREE.MeshLambertMaterial({ color: 0x769299, flatShading: true });
+const bgForestMat = new THREE.MeshLambertMaterial({ color: 0x486b59, flatShading: true });
+
+const bgArcs = [
+  { count: 32, radius: 95, hMin: 30, hMax: 65, w: 10, mat: bgRockFar },
+  { count: 40, radius: 72, hMin: 18, hMax: 42, w: 7, mat: bgRockMid },
+  { count: 48, radius: 52, hMin: 8, hMax: 20, w: 4.5, mat: bgForestMat }
+];
+
+bgArcs.forEach(ring => {
+  for (let k = 0; k < ring.count; k++) {
+    const ang = (k / ring.count) * Math.PI * 2 + (k % 3) * 0.08;
+    const rad = ring.radius + Math.sin(k * 1.7) * 7;
+    const h = ring.hMin + Math.abs(Math.sin(k * 1.5)) * (ring.hMax - ring.hMin);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(ring.w, h, ring.w * 1.2), ring.mat);
+    m.position.set(Math.cos(ang) * rad, h / 2 - 2, Math.sin(ang) * rad);
+    m.rotation.y = ang + 0.3;
+    envGroup.add(m);
+  }
+});
+
+const warGroup = new THREE.Group();
+scene.add(warGroup);
+
+const blueMat = new THREE.MeshLambertMaterial({ color: 0x274a70, flatShading: true });
+const redMat = new THREE.MeshLambertMaterial({ color: 0x96322b, flatShading: true });
+const greenMat = new THREE.MeshLambertMaterial({ color: 0x3d664f, flatShading: true });
+const vehGeo = new THREE.BoxGeometry(0.4, 0.45, 0.65);
+const towerGeo = new THREE.BoxGeometry(1.0, 2.2, 1.0);
+
+const warUnits = [];
+
+for (let b = 0; b < 28; b++) {
+  const m = new THREE.Mesh(vehGeo, blueMat);
+  m.visible = false;
+  warGroup.add(m);
+  const r = Math.floor(b / 7);
+  const c = b % 7;
+  warUnits.push({
+    mesh: m,
+    pos: new THREE.Vector3(8 + c * 0.95, 6.2, 3 + r * 1.2),
+    time: 7.2 + b * 0.06
+  });
+}
+
+for (let a = 0; a < 36; a++) {
+  const m = new THREE.Mesh(vehGeo, redMat);
+  m.visible = false;
+  warGroup.add(m);
+  const r = Math.floor(a / 6);
+  const c = a % 6;
+  warUnits.push({
+    mesh: m,
+    pos: new THREE.Vector3(-14 + c * 0.9 + r * 0.4, 0.6, -12 + r * 1.3 - c * 0.4),
+    time: 7.4 + a * 0.05
+  });
+}
+
+for (let w = 0; w < 16; w++) {
+  const m = new THREE.Mesh(vehGeo, greenMat);
+  m.visible = false;
+  warGroup.add(m);
+  const r = Math.floor(w / 4);
+  const c = w % 4;
+  warUnits.push({
+    mesh: m,
+    pos: new THREE.Vector3(-9 + c * 1.1, 5.0, 3 + r * 1.2),
+    time: 7.0 + w * 0.08
+  });
+}
+
+for (let tw = 0; tw < 4; tw++) {
+  const tMesh = new THREE.Mesh(towerGeo, blueMat);
+  tMesh.visible = false;
+  warGroup.add(tMesh);
+  const coords = [
+    { x: 10, y: 7.3, z: 2 },
+    { x: 7, y: 6.8, z: 6 },
+    { x: -10, y: 6.2, z: 2 },
+    { x: -7, y: 5.6, z: 5 }
+  ];
+  warUnits.push({
+    mesh: tMesh,
+    pos: new THREE.Vector3(coords[tw].x, coords[tw].y, coords[tw].z),
+    time: 6.6 + tw * 0.2
+  });
+}
+
+const LOOP_T = 11.5;
+const clk = new THREE.Clock();
+const cTemp = new THREE.Color();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clk.getElapsedTime() % LOOP_T;
+
+  let camRad = 62;
+  let camH = 46;
+  let camTheta = 0.85 + (t / LOOP_T) * 0.35;
+
+  if (t < 7.0) {
+    const p = t / 7.0;
+    camH = 32 + p * 14;
+    camRad = 54 + p * 8;
+  } else {
+    camH = 46;
+    camRad = 62;
+    camTheta = 1.2;
+  }
+
+  camera.position.x = Math.cos(camTheta) * camRad;
+  camera.position.y = camH;
+  camera.position.z = Math.sin(camTheta) * camRad;
+  camera.lookAt(0, 1.5, 0);
+
+  for (let i = 0; i < total; i++) {
+    const d = gridMeta[i];
+    if (t < 0.5) {
+      dummy.position.set(d.px, d.baseH / 2, d.pz);
+      dummy.scale.set(1, d.baseH, 1);
+      dummy.updateMatrix();
+      instTerrain.setMatrixAt(i, dummy.matrix);
+      instTerrain.setColorAt(i, colLowGround);
+    } else {
+      const dt = t - d.delay;
+      if (dt > 0) {
+        const p = Math.min(1.0, dt / 0.58);
+        const ease = 1 - Math.pow(1 - p, 3);
+        const cur = d.baseH + (d.targetH - d.baseH) * ease;
+        dummy.position.set(d.px, cur / 2, d.pz);
+        dummy.scale.set(1, cur, 1);
+        dummy.updateMatrix();
+        instTerrain.setMatrixAt(i, dummy.matrix);
+
+        cTemp.lerpColors(colLowGround, d.col, Math.min(1.0, ease * 1.4));
+        instTerrain.setColorAt(i, cTemp);
+      } else {
+        dummy.position.set(d.px, d.baseH / 2, d.pz);
+        dummy.scale.set(1, d.baseH, 1);
+        dummy.updateMatrix();
+        instTerrain.setMatrixAt(i, dummy.matrix);
+        instTerrain.setColorAt(i, colLowGround);
+      }
+    }
+  }
+  instTerrain.instanceMatrix.needsUpdate = true;
+  if (instTerrain.instanceColor) instTerrain.instanceColor.needsUpdate = true;
+
+  warUnits.forEach(u => {
+    if (t >= u.time && t < LOOP_T - 0.4) {
+      u.mesh.visible = true;
+      u.mesh.position.copy(u.pos);
+      const sc = Math.min(1.0, (t - u.time) / 0.22);
+      u.mesh.scale.setScalar(sc);
+    } else {
+      u.mesh.visible = false;
+    }
+  });
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+function onWindowResize() {
+  const w = container.clientWidth || window.innerWidth;
+  const h = container.clientHeight || window.innerHeight;
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+}
+window.addEventListener('resize', onWindowResize);
+
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_8 -->
+</body>
+</html>
